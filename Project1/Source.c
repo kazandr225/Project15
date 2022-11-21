@@ -2,50 +2,32 @@
 #include <stdio.h>
 #include <time.h>
 
-VOID control();
-VOID tm(int cntrl);
 HANDLE hThread[2];
-int n = 0;
 
-int main()
-{
-	system("chcp 1251>nul");
-
-	hThread[0] = CreateThread(NULL, 0, control, NULL, 0, 0);
-	hThread[1] = CreateThread(NULL, 0, tm, NULL, 0, 0);
-	WaitForMultipleObjects(2, hThread, TRUE, INFINITE);
-
-	/*int a[2];
-	GetExitCodeThread(hThread[0],a);
-	GetExitCodeThread(hThread[1], a+1);
-	printf("1 поток - %d, 2 поток - %d", *a, *(a+1));
-
-	for (size_t i = 0; i < 2 ; i++)
-	{
-		CloseHandle(hThread[i]);
-	}
-
-	return 0;*/
-}
-
-
-VOID tm(int cntrl) //часы
+int tm(int cntrl) //часы
 {
 	
-	int start, end;
+	int start, end; //для секундомера
 	int ms = 0;
 	int ns = 0;
 	int sec = 0;
 	int min = 0;
 	start = clock();
 
-	
-	//printf("Число: ");
-	//scanf_s("%d", &cntl);
+	int min2, sec2; //для таймера
+	if (cntrl == 2)
+	{
+		printf("Введите количество минут: ");
+		scanf_s("%i", &min2);
+
+		printf("Введите количество секунд: ");
+		scanf_s("%i", &sec2);
+	}
+
 	switch (cntrl)
 	{
 	case 1:
-		while (1)
+		while (GetAsyncKeyState(VK_ESCAPE) == 0)
 		{
 			end = clock();
 			ns = end - start;
@@ -61,72 +43,79 @@ VOID tm(int cntrl) //часы
 				min = min + 1;
 				sec = 0;
 			}
-			
 			printf("%d:%d.%d\r", min, sec, ms);
 		}
 		
 		break;
 	case 2:
-		/*print_s("Введите количество минут");
-		scanf_s("%d", &min);
-		print_s("Введите количество секунд");
-		scanf_s("%d", &sec);
-			
-		start = clock();
-		ns = start - end;
-		ms = ns * 10;
-		
-		if (ms < 0)
+		while (GetAsyncKeyState(VK_ESCAPE) == 0)
 		{
-			sec = sec - 1;
-			ms = ms + 100;
-			end = start;
-		}
-		if (sec < 0)
-		{
-			min = min - 1;
-			sec = 0;
-		}
+			Sleep(970); // 970 + 30 = 1 секунда (30 от обработки)
 
-		printf("%d:%d.%d\r", min, sec, ms);*/
+			if (sec2>0)
+			{
+				sec2--;
+				printf("%d:%d\r", min2, sec2);
+			}
+			else if (sec2 == 0 && min2 > 0)
+			{
+				sec2 = 59;
+				min2--;
+				printf("%d:%d\r", min2, sec2);
+			}
+			else if (sec2 == 0 && min2 == 0)
+			{
+				printf("Отсчет закончен\n");
+				printf("%d:%d\r", min2, sec2);
+			}	
+		}
 		break;
 	}
-
+	
+	system("cls");
+	control();
+	//ExitThread(0);
 	
 }
 
-VOID control() //управление часами
+int control() //управление часами
 {
+	printf_s(" 1 - режим секундомера;\n 2 - пауза;\n 3 - снять с паузы;\n 4 - запуск таймера;\n");
 	int command;
-	
-	while (TRUE)
-	{
-		printf_s(" 1 - режим секундомера;\n 2 - пауза;\n 3 - снять с паузы;\n 4 - запуск таймера;\n");
-		printf("Введите номер управления: ");
-	}
-	
+	printf("Введите номер управления: ");
 	scanf_s("%d", &command);
+	printf("\n");
 
 	switch (command)
 	{
 	case 1:
-		printf("запуск секундомера");
-	    hThread[1] = CreateThread(NULL, 0, tm, NULL, 0, 0);
-		WaitForMultipleObjects(3, hThread, TRUE, INFINITE);
+		printf("запуск секундомера\n");
+		hThread[1] = CreateThread(NULL, 0, tm, 1, 0, 0);
+		
+		control();
+	//WaitForMultipleObjects(3, hThread, TRUE, INFINITE);
 		break;
 	case 2:
-		printf("Поток поставлена на паузу");
+		printf("Поток поставлена на паузу\n");
 		SuspendThread(hThread[1]);
 		break;
 	case 3:
-		printf("Поток снят с паузы");
+		printf("Поток снят с паузы\n");
 		ResumeThread(hThread[1]);
 		break;
 	case 4:
-		printf("Режим таймера");
+		printf("Режим таймера\n");
+		hThread[1] = CreateThread(NULL, 0, tm, 2, 0, 0);
 		break;
 	default:
-		printf("Ничего не изменилось");
+		printf("Ничего не изменилось\n");
 		break;
 	}
+	ExitThread(0);
+}
+
+int main()
+{
+	system("chcp 1251>nul");
+	control();
 }
