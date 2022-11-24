@@ -45,7 +45,7 @@ int tm(int cntrl) //часы
 			}
 			printf("%d:%d.%d\r", min, sec, ms);
 		}
-		
+		control();
 		break;
 	case 2:
 		while (GetAsyncKeyState(VK_ESCAPE) == 0)
@@ -67,20 +67,19 @@ int tm(int cntrl) //часы
 			{
 				printf("Отсчет закончен\n");
 				printf("%d:%d\r", min2, sec2);
+				control();
 			}	
 		}
 		break;
 	}
 	
 	system("cls");
-	control();
-	//ExitThread(0);
-	
+	//control();
 }
 
 int control() //управление часами
 {
-	printf_s(" 1 - режим секундомера;\n 2 - пауза;\n 3 - снять с паузы;\n 4 - запуск таймера;\n");
+	printf_s(" 1 - режим секундомера;\n 2 - пауза, снять с паузы;\n 3 - запуск таймера;\n");
 	int command;
 	printf("Введите номер управления: ");
 	scanf_s("%d", &command);
@@ -91,24 +90,31 @@ int control() //управление часами
 	case 1:
 		printf("запуск секундомера\n");
 		hThread[1] = CreateThread(NULL, 0, tm, 1, 0, 0);
-		
-		control();
-	//WaitForMultipleObjects(3, hThread, TRUE, INFINITE);
 		break;
 	case 2:
-		printf("Поток поставлена на паузу\n");
-		SuspendThread(hThread[1]);
+		while (GetAsyncKeyState(VK_ESCAPE) == 0)
+		{
+			if (ResumeThread(hThread[1]) != 0)
+			{
+				printf("Работа потока возобновлена\n");
+				control();
+				ResumeThread(hThread[1]);
+			}
+			else
+			{
+				printf("Поток поставлен на паузу\n");
+				control();
+				SuspendThread(hThread[1]);
+			}
+		}
 		break;
 	case 3:
-		printf("Поток снят с паузы\n");
-		ResumeThread(hThread[1]);
-		break;
-	case 4:
 		printf("Режим таймера\n");
 		hThread[1] = CreateThread(NULL, 0, tm, 2, 0, 0);
 		break;
 	default:
-		printf("Ничего не изменилось\n");
+		CloseHandle(hThread[0]);
+		CloseHandle(hThread[1]);
 		break;
 	}
 	ExitThread(0);
